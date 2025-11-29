@@ -11,6 +11,7 @@ const isLoggedIn = (req , res , next) => {
                 message: "You need to sign in to access this route",
             });
         }
+        console.log("I came here")
 
         // Verify token and handle errors
         const decoded = jwt.verify(token, process.env.JWT_SECRET);

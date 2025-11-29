@@ -61,8 +61,8 @@ const AddMovie = () => {
             const response = await axios.post(`${API_BASE_URL}/movie/addmovie` , 
             formData , 
             {headers : {
-                "Content-Type": "multipart/form-data"
-            }} , {
+                "Content-Type": "multipart/form-data",
+            }, withCredentials: true} , {
                 withCredentials: true,
             }
             )

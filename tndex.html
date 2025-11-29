@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieInfo</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: black;
+            color: white;
+            overflow-x: hidden;
+        }
+        section {
+            position: relative;
+        }
+        /* Background video */
+        #bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            padding: 0 2rem;
+        }
+        .hero-content h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        .hero-content button {
+            padding: 0.5rem 1.5rem;
+            font-size: 1rem;
+            border: 2px solid white;
+            border-radius: 9999px;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .hero-content button:hover {
+            background-color: red;
+        }
+
+        /* Movie cards */
+        .movie-section {
+            padding: 4rem 1rem;
+        }
+        .movie-section h2 {
+            text-align: center;
+            color: #f87171; /* red-300 */
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+        .movie-row {
+            display: flex;
+            gap: 1rem;
+            overflow-x: hidden;
+            white-space: nowrap;
+        }
+        .movie-row .movie-card {
+            display: inline-block;
+            min-width: 200px;
+            max-width: 200px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .movie-row .movie-card:hover {
+            transform: scale(1.05);
+        }
+        .movie-card img {
+            width: 100%;
+            display: block;
+        }
+        .movie-card h3 {
+            text-align: center;
+            font-size: 1rem;
+            padding: 0.5rem 0;
+        }
+
+        /* Categories */
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            padding: 2rem 1rem 4rem;
+        }
+        .category-card {
+            background: #7f1d1d; /* red-ish */
+            padding: 1rem;
+            text-align: center;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100px;
+        }
+        .category-card:hover {
+            transform: scale(1.05);
+            background: linear-gradient(to right, #ec4899, #7e22ce);
+        }
+
+        /* Scroll animation */
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        @keyframes reverseScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(50%); }
+        }
+        .animate-scroll {
+            display: flex;
+            gap: 1rem;
+            animation: scroll 40s linear infinite;
+        }
+        .animate-reverseScroll {
+            display: flex;
+            gap: 1rem;
+            animation: reverseScroll 40s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background video -->
+    <video id="bg-video" src="https://res.cloudinary.com/dosmzkqeu/video/upload/w_2250,h_1080/pdjgycdqyolxup44e6il.mp4" autoplay loop muted></video>
+
+    <!-- Hero Section -->
+    <section>
+        <div class="hero-content">
+            <h1>Welcome to MovieInfo</h1>
+            <p>Explore movies, shows, and more.</p>
+            <button id="browse-btn">Start Browsing</button>
+        </div>
+    </section>
+
+    <!-- Latest Movies -->
+    <section class="movie-section">
+        <h2>Explore Movies</h2>
+        <div class="movie-row animate-scroll" id="first-row"></div>
+    </section>
+    <section class="movie-section">
+        <div class="movie-row animate-reverseScroll" id="second-row"></div>
+    </section>
+
+    <!-- Categories -->
+    <section id="categories-section">
+        <h2>Browse Categories</h2>
+        <div class="categories" id="categories"></div>
+    </section>
+
+    <script>
+        const API_BASE_URL = "<?=API_BASE_URL?>"; // Replace with your backend URL
+        const bgVideo = document.getElementById('bg-video');
+        const browseBtn = document.getElementById('browse-btn');
+        const categoriesSection = document.getElementById('categories-section');
+        const firstRow = document.getElementById('first-row');
+        const secondRow = document.getElementById('second-row');
+
+        const categories = ["Action", "Comedy", "Drama", "Horror", "Romance"];
+
+        // Scroll to categories on button click
+        browseBtn.addEventListener('click', () => {
+            categoriesSection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Adjust opacity on scroll
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            const newOpacity = Math.max(1 - scrollY / 400, 0);
+            bgVideo.style.opacity = newOpacity;
+        });
+
+        // Render categories
+        const renderCategories = () => {
+            const container = document.getElementById('categories');
+            categories.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = 'category-card';
+                div.textContent = cat;
+                div.addEventListener('click', () => {
+                    window.location.href = `/category/${cat}`;
+                });
+                container.appendChild(div);
+            });
+        };
+
+        // Fetch latest movies
+        const fetchLatestMovies = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/movie/getLatestMovie`);
+                const data = await res.json();
+                if(data.success) {
+                    const movies = data.data;
+                    const firstHalf = movies.slice(0, 6);
+                    const secondHalf = movies.slice(6, 12);
+
+                    const renderRow = (row, list) => {
+                        list.forEach(movie => {
+                            const card = document.createElement('div');
+                            card.className = 'movie-card';
+                            card.innerHTML = `
+                                <img src="${movie.posterUrl}" alt="${movie.moviename}" />
+                                <h3>${movie.moviename}</h3>
+                            `;
+                            card.addEventListener('click', () => {
+                                window.location.href = `/movie/${movie._id}`;
+                            });
+                            row.appendChild(card);
+                        });
+                        // Duplicate for scrolling effect
+                        list.forEach(movie => {
+                            const card = document.createElement('div');
+                            card.className = 'movie-card';
+                            card.innerHTML = `
+                                <img src="${movie.posterUrl}" alt="${movie.moviename}" />
+                                <h3>${movie.moviename}</h3>
+                            `;
+                            card.addEventListener('click', () => {
+                                window.location.href = `/movie/${movie._id}`;
+                            });
+                            row.appendChild(card);
+                        });
+                    };
+
+                    renderRow(firstRow, firstHalf);
+                    renderRow(secondRow, secondHalf);
+                }
+            } catch(err) {
+                console.error(err);
+                alert("Failed to load movies!");
+            }
+        };
+
+        renderCategories();
+        fetchLatestMovies();
+    </script>
+</body>
+</html>
